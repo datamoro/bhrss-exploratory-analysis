@@ -1,255 +1,189 @@
-# 🚀 Quick Start Guide - Health Data Pipeline
+# Quick Start Guide — Health Data Pipeline
 
-## ⚡ Setup Rápido (10 minutos)
+## Setup (10 minutes)
 
-### 1️⃣ Verifique os Pré-requisitos
+### 1. Verify Prerequisites
 
 ```bash
-# Docker instalado?
 docker --version
-# Deve retornar: Docker version 20.x.x ou superior
+# Expected: Docker version 20.x.x or higher
 
-# Docker Compose instalado?
 docker-compose --version
-# Deve retornar: docker-compose version 1.29.x ou superior
+# Expected: docker-compose version 1.29.x or higher
 
-# Python instalado?
 python --version
-# Deve retornar: Python 3.9.x ou superior
+# Expected: Python 3.9.x or higher
 ```
 
-### 2️⃣ Estrutura de Pastas
+### 2. Project Structure
 
-Certifique-se que sua estrutura está assim:
+Ensure your directory looks like this:
 
 ```
-C:\Users\caiom\Documents\portfolio_pessoal\superset-health-data-pipeline\
-├── data\
-│   └── LLCP2024ASC.asc          ← Seu arquivo de dados aqui
-├── etl\
-│   └── etl_brfss.py
-├── sql\
-│   ├── init_db.sql
-│   └── analytical_queries.sql
-├── docs\
-│   └── lessons_learned.md
-├── docker-compose.yml
-├── requirements.txt
-├── README.md
-└── .gitignore
+bhrss-exploratory-analysis/
++-- data/
+|   +-- LLCP2024ASC.ASC          <-- Your data file here
++-- etl/
+|   +-- etl_pipeline_simple.py
++-- sql/
+|   +-- init_db.sql
+|   +-- analytical_queries.sql
++-- docker-compose.simple.yml
++-- requirements.txt
++-- README.md
++-- .gitignore
 ```
 
-### 3️⃣ Iniciar Infraestrutura
+### 3. Start Infrastructure
 
 ```bash
-# Navegue até a pasta do projeto
-cd C:\Users\caiom\Documents\portfolio_pessoal\superset-health-data-pipeline
+# Start containers
+docker-compose -f docker-compose.simple.yml up -d
 
-# Suba os containers
-docker-compose up -d
-
-# Aguarde ~2 minutos e verifique status
-docker-compose ps
+# Wait ~2 minutes and verify status
+docker-compose -f docker-compose.simple.yml ps
 ```
 
-✅ **Resultado esperado:**
+Expected result:
 ```
 NAME                      STATUS    PORTS
-health-data-postgres      Up        0.0.0.0:5432->5432/tcp
-health-data-superset      Up        0.0.0.0:8088->8088/tcp
+health_postgres_simple    Up        0.0.0.0:5434->5432/tcp
+health_superset_simple    Up        0.0.0.0:8089->8088/tcp
 ```
 
-### 4️⃣ Instalar Dependências Python
+### 4. Install Python Dependencies
 
 ```bash
-# Criar ambiente virtual (recomendado)
 python -m venv venv
-
-# Ativar ambiente virtual
 .\venv\Scripts\activate    # Windows
-# ou
-source venv/bin/activate   # Linux/Mac
-
-# Instalar dependências
 pip install -r requirements.txt
 ```
 
-### 5️⃣ Criar Schema do Banco de Dados
-
-```bash
-# Entrar no container PostgreSQL
-docker exec -it health-data-postgres psql -U admin -d health_data
-
-# Executar dentro do psql:
-\i /docker-entrypoint-initdb.d/init_db.sql
-
-# Verificar tabela criada
-\dt
-
-# Sair
-\q
-```
-
-Ou simplesmente:
-```bash
-docker exec -i health-data-postgres psql -U admin -d health_data < sql/init_db.sql
-```
-
-### 6️⃣ Executar Pipeline ETL
+### 5. Run the ETL Pipeline
 
 ```bash
 cd etl
-python etl_brfss.py
+python etl_pipeline_simple.py
 ```
 
-⏱️ **Tempo estimado**: 3-5 minutos para 50.000 registros
+Estimated time: 3-5 minutes for the full 457K records.
 
-📊 **Progresso esperado:**
+Expected output:
 ```
-2024-11-13 10:00:00 - INFO - ============================================================
-2024-11-13 10:00:00 - INFO - INICIANDO PIPELINE ETL BRFSS 2024
-2024-11-13 10:00:00 - INFO - ============================================================
-2024-11-13 10:00:01 - INFO - ✓ Conexão com PostgreSQL estabelecida com sucesso
-2024-11-13 10:00:05 - INFO - ✓ Extraídos 50000 registros com 21 colunas
-2024-11-13 10:00:08 - INFO - ✓ Transformação completa. 49234 registros válidos
-2024-11-13 10:00:35 - INFO - ✓ 49234 registros carregados com sucesso no PostgreSQL
-2024-11-13 10:00:35 - INFO - ============================================================
-2024-11-13 10:00:35 - INFO - PIPELINE ETL CONCLUÍDO COM SUCESSO!
-2024-11-13 10:00:35 - INFO - Tempo de execução: 35.23 segundos
-2024-11-13 10:00:35 - INFO - Registros processados: 49234
-2024-11-13 10:00:35 - INFO - ============================================================
+INICIANDO PIPELINE ETL SIMPLIFICADO BRFSS 2024
+FASE 1: EXTRACAO DE DADOS
+[OK] Extracao concluida com sucesso!
+FASE 2: TRANSFORMACAO DE DADOS
+Transformacao completa. Contagem final: ~457,000
+FASE 3: CARGA DE DADOS
+[OK] Carga de dados concluida com sucesso!
+[OK] PIPELINE ETL CONCLUIDO COM SUCESSO!
 ```
 
-### 7️⃣ Validar Dados Carregados
+### 6. Validate Loaded Data
 
 ```bash
-# Conectar ao PostgreSQL
-docker exec -it health-data-postgres psql -U admin -d health_data
+docker exec -it health_postgres_simple psql -U dataengineer -d health_data
 
-# Executar query de validação
-SELECT COUNT(*) FROM public.brfss_health_data;
-# Deve retornar ~49.000-50.000
+# Inside psql:
+SELECT COUNT(*) FROM brfss_health_data_simple;
+-- Expected: ~457,670
 
-# Ver amostra de dados
-SELECT * FROM public.brfss_health_data LIMIT 10;
+SELECT * FROM brfss_health_data_simple LIMIT 5;
 
-# Sair
 \q
 ```
 
-### 8️⃣ Acessar Apache Superset
+### 7. Access Apache Superset
 
-1. Abra navegador: http://localhost:8088
+1. Open browser: http://localhost:8089
 2. Login:
    - **Username**: admin
    - **Password**: admin
 
-### 9️⃣ Configurar Database no Superset
+### 8. Configure Database in Superset
 
-1. No Superset, vá em: **Settings** → **Database Connections** → **+ Database**
-2. Selecione: **PostgreSQL**
-3. Preencha:
+1. In Superset: **Settings > Database Connections > + Database**
+2. Select: **PostgreSQL**
+3. Connection string:
    ```
-   Display Name: BRFSS Health Data
-   SQLAlchemy URI: postgresql://admin:admin123@host.docker.internal:5432/health_data
+   postgresql://dataengineer:SecurePass123!@health_postgres:5432/health_data
    ```
-4. Clique em **Test Connection**
-5. Se sucesso, clique em **Connect**
+4. Click **Test Connection**
+5. If successful, click **Connect**
 
-### 🔟 Criar Primeiro Dashboard
+### 9. Create Your First Query
 
-1. **SQL Lab** → **SQL Editor**
-2. Selecione database: `BRFSS Health Data`
-3. Execute query teste:
+1. **SQL Lab > SQL Editor**
+2. Select database: `BRFSS Health Data`
+3. Run a test query:
    ```sql
-   SELECT 
+   SELECT
        general_health,
        COUNT(*) as count
-   FROM public.brfss_health_data
+   FROM brfss_health_data_simple
    GROUP BY general_health
    ORDER BY count DESC;
    ```
-4. Explore os resultados!
 
 ---
 
-## 🔍 Troubleshooting Rápido
+## Troubleshooting
 
-### Problema: Container não inicia
+### Container won't start
 
 ```bash
-# Ver logs detalhados
-docker-compose logs postgres
-docker-compose logs superset
-
-# Reiniciar
-docker-compose restart
+docker-compose -f docker-compose.simple.yml logs health_postgres
+docker-compose -f docker-compose.simple.yml logs health_superset
+docker-compose -f docker-compose.simple.yml restart
 ```
 
-### Problema: Porta já em uso
+### Port already in use
 
 ```bash
-# Ver o que está usando a porta 5432
-netstat -ano | findstr :5432
-
-# Parar processo ou mudar porta no docker-compose.yml
+netstat -ano | findstr :5434
+# Stop the conflicting process or change the port in docker-compose.simple.yml
 ```
 
-### Problema: ETL falha com "connection refused"
+### ETL fails with "connection refused"
 
 ```bash
-# Verificar se PostgreSQL está rodando
-docker-compose ps
-
-# Se não estiver, iniciar
-docker-compose up -d postgres
-
-# Aguardar 30 segundos e tentar novamente
+docker-compose -f docker-compose.simple.yml ps
+# If postgres is not running:
+docker-compose -f docker-compose.simple.yml up -d health_postgres
+# Wait 30 seconds and retry
 ```
 
-### Problema: Superset não carrega
+### Superset won't load
 
-- Aguarde 2-3 minutos após `docker-compose up`
-- Superset leva tempo para inicializar na primeira vez
-- Verifique logs: `docker-compose logs superset`
-
----
-
-## 📝 Checklist de Sucesso
-
-- [ ] Docker containers rodando (postgres + superset)
-- [ ] Tabela criada no PostgreSQL
-- [ ] ETL executado com sucesso
-- [ ] ~50.000 registros carregados
-- [ ] Superset acessível em localhost:8088
-- [ ] Database connection configurada
-- [ ] Primeira query executada com sucesso
+- Wait 2-3 minutes after `docker-compose up` (first-time init is slow)
+- Check logs: `docker-compose -f docker-compose.simple.yml logs health_superset`
 
 ---
 
-## 🎉 Pronto!
+## Success Checklist
 
-Seu pipeline está funcionando! Agora você pode:
-
-1. Explorar queries em `sql/analytical_queries.sql`
-2. Criar dashboards no Superset
-3. Adicionar mais dados (aumentar `max_records` no ETL)
-4. Customizar análises
-
----
-
-## 📞 Próximos Passos
-
-Consulte o [README.md](../README.md) principal para:
-- Análises sugeridas
-- Melhorias futuras
-- Documentação completa
-
-Consulte [lessons_learned.md](../docs/lessons_learned.md) para:
-- Insights do desenvolvimento
-- Decisões técnicas
-- Aprendizados
+- [ ] Docker containers running (postgres + superset)
+- [ ] ETL executed successfully
+- [ ] ~457,000 records loaded
+- [ ] Superset accessible at localhost:8089
+- [ ] Database connection configured
+- [ ] First query executed successfully
 
 ---
 
-**Desenvolvido por Caio Moreira | 2024**
+## Next Steps
+
+See the [README.md](../README.md) for:
+- Analytical dashboard examples
+- Health informatics context
+- Full documentation
+
+See [lessons_learned.md](../docs/lessons_learned.md) for:
+- Technical insights from development
+- Domain knowledge acquired
+- Design decisions and trade-offs
+
+---
+
+Developed by Caio Moreira | 2024
