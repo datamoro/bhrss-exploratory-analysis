@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  health_postgres:
+    image: postgres:15-alpine
+    container_name: health_postgres_new
+    hostname: health_postgres
+    environment:
+      POSTGRES_DB: health_data
+      POSTGRES_USER: dataengineer
+      POSTGRES_PASSWORD: SecurePass123!
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - health_postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d
+    networks:
+      health_net:
+        aliases:
+          - health_postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dataengineer -d health_data"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Apache Superset
+  health_superset:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.superset
+    container_name: health_superset_new
+    hostname: health_superset
+    environment:
+      - SUPERSET_SECRET_KEY=my_super_secret_key_change_this
+      - SUPERSET_LOAD_EXAMPLES=no
+      - PYTHONPATH=/app/pythonpath:/app/
+    ports:
+      - "8089:8088"
+    volumes:
+      - health_superset_data:/app/superset_home
+      - ./docker/superset-init.sh:/app/docker-init.sh
+      - ./docker/superset_config.py:/app/pythonpath/superset_config.py
+    networks:
+      health_net:
+        aliases:
+          - health_superset
+    depends_on:
+      health_postgres:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: 
+      - |
+        chmod +x /app/docker-init.sh
+        /app/docker-init.sh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  health_postgres_data:
+    name: health_postgres_data_new
+    driver: local
+  health_superset_data:
+    name: health_superset_data_new
+    driver: local
+
+networks:
+  health_net:
+    name: health_pipeline_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.30.0.0/16
+          gateway: 172.30.0.1

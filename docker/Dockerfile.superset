@@ -1,0 +1,24 @@
+FROM apache/superset:3.1.0
+
+USER root
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Switch to superset user
+USER superset
+
+# Install Python database drivers
+RUN pip install --no-cache-dir \
+    psycopg2-binary==2.9.9 \
+    sqlalchemy-utils==0.41.1
+
+# Copy superset config
+COPY superset_config.py /app/pythonpath/
+
+WORKDIR /app
+
+USER superset

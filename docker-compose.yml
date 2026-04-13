@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  # O nome deste serviço é "postgres", que será o HOST usado pelo Superset
+  postgres:
+    image: postgres:15-alpine
+    container_name: health-data-postgres
+    environment:
+      POSTGRES_DB: health_data
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d
+    networks:
+      - health-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d health_data"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Apache Superset
+  superset:
+    # --- MODIFICAÇÃO CHAVE AQUI ---
+    # Usamos o bloco 'build' para criar uma imagem customizada
+    build:
+      context: .
+      # O Dockerfile instruirá a instalação do driver psycopg2-binary
+      dockerfile: Dockerfile 
+    # ------------------------------
+    container_name: health-data-superset
+    environment:
+      SUPERSET_SECRET_KEY: 'thisISaSECRET_1234'
+      SUPERSET_LOAD_EXAMPLES: 'no'
+    ports:
+      - "8088:8088"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - superset_home:/app/superset_home
+    networks:
+      - health-network
+    command: >
+      sh -c "
+      superset db upgrade &&
+      superset fab create-admin --username admin --firstname Admin --lastname User --email admin@superset.com --password admin &&
+      superset init &&
+      superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger
+      "
+
+volumes:
+  postgres_data:
+  superset_home:
+
+networks:
+  health-network:
+    driver: bridge
