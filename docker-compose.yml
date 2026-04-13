@@ -11,10 +11,10 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./sql:/docker-entrypoint-initdb.d
+      - ./sql/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
     networks:
       - health-network
     healthcheck:
@@ -37,7 +37,7 @@ services:
       SUPERSET_SECRET_KEY: 'thisISaSECRET_1234'
       SUPERSET_LOAD_EXAMPLES: 'no'
     ports:
-      - "8088:8088"
+      - "8090:8088"
     depends_on:
       postgres:
         condition: service_healthy
