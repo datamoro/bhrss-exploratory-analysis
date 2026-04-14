@@ -1,6 +1,6 @@
 -- ================================================================
 -- QUERIES ANALÍTICAS - BRFSS 2024 Health Data
--- Autor: Caio Moreira
+-- Autor: Caio Moro
 -- Descrição: Queries prontas para usar no Superset ou análises ad-hoc
 -- ================================================================
 
