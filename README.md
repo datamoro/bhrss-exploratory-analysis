@@ -329,7 +329,7 @@ See the full write-up in [docs/lessons_learned.md](docs/lessons_learned.md) — 
 
 ## Author
 
-**Caio Moreira** — Data Engineer transitioning into Health Informatics
+**Caio Moro** — Data Engineer transitioning into Health Informatics
 GitHub: [datamoro](https://github.com/datamoro)
 
 ---
